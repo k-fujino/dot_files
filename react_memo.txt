@@ -1,0 +1,24 @@
+だいたいこのような感じです！
+
+componentでactionを呼ぶ
+https://github.com/monstar-lab/try-it-web-api/blob/staging/app/assets/javascripts/juku/components/PrintModal.es6#L50
+(この関数の本体は https://github.com/monstar-lab/try-it-web-api/blob/staging/app/assets/javascripts/juku/components/StudentDetail.es6#L171
+で、　https://github.com/monstar-lab/try-it-web-api/blob/staging/app/assets/javascripts/juku/components/StudentDetail.es6#L276　でonGetPdfLinkとして渡されています)
+↓
+action
+https://github.com/monstar-lab/try-it-web-api/blob/staging/app/assets/javascripts/juku/actions/Pdf.es6
+↓
+saga
+https://github.com/monstar-lab/try-it-web-api/blob/staging/app/assets/javascripts/juku/sagas/index.es6
+
+すいません↑だと若干たりていなかったので、こちらの図でお願いします↓
+
+component ←————
+↓                                  |
+action → reducer → store
+↓
+saga
+
+sagaでAPIを叩いている以外に、reducer/Pdf.es　によってisJoinedPdfStatusとcheckCountの値が変更されています。
+(reducerまで実装するとstoreは勝手に変更され、勝手にcomponentまで伝えてくれます)
+
