@@ -1,0 +1,18 @@
+#セットアップ手順memo
+
+## zshの導入
+.zshrc .zsh_historyをcopyして
+brew install zsh
+which zsh
+chsh -s /usr/local/bin/zsh
+
+## tmuxの導入
+cp .tmux.conf ~/
+brew install tmux
+
+## vim deinの導入
+参考url: http://qiita.com/DialBird/items/0a96910f13586d635dc0
+
+deinを入れてから、.vimrcをcopyしてpluginを導入する。
+  vim7.4.8ならdeinを使ってfugitiveを使用可能
+

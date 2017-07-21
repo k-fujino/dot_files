@@ -27,7 +27,7 @@ case ${UID} in
 
     ;;
 *)
-    PROMPT="%{${fg[white]}%}%/%%%{${reset_color}%} "
+    PROMPT="%{${fg[green]}%}%/%%%{${reset_color}%} "
     PROMPT2="%{${fg[red]}%}%_%%%{${reset_color}%} "
     SPROMPT="%{${fg[red]}%}%r is correct? [n,y,a,e]:%{${reset_color}%} "
     [ -n "${REMOTEHOST}${SSH_CONNECTION}" ] && 
@@ -98,7 +98,7 @@ setopt share_history        # share command history data
 ## Completion configuration
 #
 fpath=(${HOME}/zsh/functions/*(N-/) ${fpath})
-autoload -Uz cdls
+#autoload -Uz cdls
 
 
 ## zsh editor
@@ -111,6 +111,7 @@ autoload zed
 #autoload predict-on
 #predict-off
 
+export LSCOLORS=gxfxcxdxbxegedabagacad
 
 ## Alias configuration
 #
@@ -123,11 +124,11 @@ alias j="jobs -l"
 
 case "${OSTYPE}" in
 freebsd*|darwin*)
-    alias ls="ls -G -w"
+    alias ls="ls -G -w -tr"
 
     ;;
 linux*)
-    alias ls="ls --color"
+    alias ls="ls --color -tr"
 
     ;;
 
@@ -136,20 +137,25 @@ esac
 alias l="ls -atr --color"
 alias la="ls -atr"
 alias ll="ls -ltr"
-alias ..="cdls ../"
-alias ...="cdls ../../"
-alias ....="cdls ../../../"
+alias ..="cd ../"
+alias ...="cd ../../"
+alias ....="cd ../../../"
 alias v="vim"
-alias c="cdls"
+alias c="cd"
 alias g="git"
 alias gp="git grep"
 alias fp="find ./|grep"
 alias hg="history 1|grep"
+alias lg="ls -a|grep"
+alias ctags="`brew --prefix`/bin/ctags"
 
 alias du="du -h"
 alias df="df -h"
 
 alias su="su -l"
+
+alias kdash="cd /Users/koichiro.fujino/kdash"
+alias ddash="cd /Users/koichiro.fujino/ddash"
 
 [[ -s ~/.rvm/scripts/rvm ]] && source ~/.rvm/scripts/rvm
 

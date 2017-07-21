@@ -1,4 +1,4 @@
 let g:netrw_dirhistmax  =10
 let g:netrw_dirhist_cnt =2
-let g:netrw_dirhist_1='/home/optim/source_code/optimal_biz_web_doc/Final/Screen'
-let g:netrw_dirhist_2='/home/optim/source_code/optimal_biz_web_doc/History'
+let g:netrw_dirhist_1='/Users/koichiro.fujino'
+let g:netrw_dirhist_2='/Users/koichiro.fujino/dot_files'
