@@ -10,6 +10,14 @@ chsh -s /usr/local/bin/zsh
 cp .tmux.conf ~/
 brew install tmux
 
+## vim
+git clone https://github.com/vim/vim.git
+git checkout v7.4.393
+vim/srcフォルダに移動
+./configure --with-features=huge --enable-multibyte --disable-gui --without-x
+make
+sudo make install
+
 ## vim deinの導入
 参考url: http://qiita.com/DialBird/items/0a96910f13586d635dc0
 
