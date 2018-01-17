@@ -5,17 +5,18 @@ if &compatible
 endif
 
 " Required:
-set runtimepath+=/Users/koichiro.fujino/.cache/dein/repos/github.com/Shougo/dein.vim
+"set runtimepath+=/home/vagrant/.cache/dein/repos/github.com/Shougo/dein.vim
+set runtimepath+=$HOME/.cache/dein/repos/github.com/Shougo/dein.vim
 
 
 
 " Required:
-if dein#load_state('/Users/koichiro.fujino/.cache/dein')
-  call dein#begin('/Users/koichiro.fujino/.cache/dein')
+if dein#load_state('$HOME/.cache/dein')
+  call dein#begin('$HOME/.cache/dein')
 
   " Let dein manage dein
   " Required:
-  call dein#add('/Users/koichiro.fujino/.cache/dein/repos/github.com/Shougo/dein.vim')
+  call dein#add('$HOME/.cache/dein/repos/github.com/Shougo/dein.vim')
 
   " Add or remove your plugins here:
   call dein#add('Shougo/neosnippet.vim')
@@ -46,23 +47,48 @@ endif
 
 set number
 set hlsearch
+set ignorecase
+set smartcase
 set showmatch
 
 set paste
+
+set ambiwidth=double "japanese sikaku sankaku layout
+set wildmode=list,full
+set history=5000
 
 "cursol shape variable
 if empty($TMUX)
   let &t_SI = "\<Esc>]50;CursorShape=1\x7"
   let &t_EI = "\<Esc>]50;CursorShape=0\x7"
-  let &t_SR = "\<Esc>]50;CursorShape=2\x7"
+"  let &t_SR = "\<Esc>]50;CursorShape=2\x7"
 else
   let &t_SI = "\<Esc>Ptmux;\<Esc>\<Esc>]50;CursorShape=1\x7\<Esc>\\"
   let &t_EI = "\<Esc>Ptmux;\<Esc>\<Esc>]50;CursorShape=0\x7\<Esc>\\"
-  let &t_SR = "\<Esc>Ptmux;\<Esc>\<Esc>]50;CursorShape=2\x7\<Esc>\\"
+"  let &t_SR = "\<Esc>Ptmux;\<Esc>\<Esc>]50;CursorShape=2\x7\<Esc>\\"
 endif
+
+set t_Co=256
 
 syntax on
 "colorscheme desert
 colorscheme wombat256mod
 
-set t_Co=256
+"タブ、空白、改行の可視化
+"set list
+"set listchars=tab:>.,trail:_,eol:?,extends:>,precedes:<,nbsp:%
+
+"全角スペースをハイライト表示
+function! ZenkakuSpace()
+    highlight ZenkakuSpace cterm=reverse ctermfg=DarkMagenta gui=reverse guifg=DarkMagenta
+endfunction
+   
+if has('syntax')
+    augroup ZenkakuSpace
+        autocmd!
+        autocmd ColorScheme       * call ZenkakuSpace()
+        autocmd VimEnter,WinEnter * match ZenkakuSpace /　/
+    augroup END
+    call ZenkakuSpace()
+endif
+
