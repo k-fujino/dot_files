@@ -59,10 +59,11 @@ setopt noautoremoveslash
 # no beep sound when complete list displayed
 #
 setopt nolistbeep
+setopt nonomatch
 
 
 ## Keybind configuration
-#
+# emacs mode ###
 # emacs like keybind (e.x. Ctrl-a gets to line head and Ctrl-e gets
 #   to end) and something additions
 #
@@ -82,7 +83,7 @@ bindkey "\\ep" history-beginning-search-backward-end
 bindkey "\\en" history-beginning-search-forward-end
 
 # reverse menu completion binded to Shift-Tab
-#
+# 補完候補を逆戻りするように
 bindkey "\e[Z" reverse-menu-complete
 
 
@@ -147,18 +148,21 @@ alias gp="git grep"
 alias fp="find ./|grep"
 alias hg="history 1|grep"
 alias lg="ls -a|grep"
-alias ctags="`brew --prefix`/bin/ctags"
+alias ig="sed 's/\\\040/ /g' ~/.mysql_history|grep"
+#alias ctags="`brew --prefix`/bin/ctags"
 
 alias du="du -h"
 alias df="df -h"
 
 alias su="su -l"
 
-alias kdash="cd /Users/koichiro.fujino/kdash"
-alias ddash="cd /Users/koichiro.fujino/ddash"
+alias pt="/home/vagrant/piip_task_v2"
+alias envr="cd env/piip_backend/ruby-2.4/"
 
-[[ -s ~/.rvm/scripts/rvm ]] && source ~/.rvm/scripts/rvm
+[[ -s ${HOME}/.rvm/scripts/rvm ]] && source ~/.rvm/scripts/rvm
 
+[[ -s ${HOME}/.rbenv ]] && export PATH="$HOME/.rbenv/bin:$PATH" 
+[[ -s ${HOME}/.rbenv ]] && eval "$(rbenv init - zsh)"
 
 
 ## load user .zshrc configuration file
@@ -171,7 +175,12 @@ export PATH=/usr/local/Trolltech/Qt-4.7.4/bin:$PATH
 export RAILS_ENV="development"
 #export RAILS_ENV="test"
 
-bindkey -e 
+export GIT_EDITOR=vim
+
+
+
+
+
 
 setopt prompt_subst
 autoload -Uz vcs_info
@@ -182,6 +191,19 @@ zstyle ':vcs_info:*' formats       \
 zstyle ':vcs_info:(sv[nk]|bzr):*' branchformat '%b%F{1}:%F{3}%r'
 
 zstyle ':vcs_info:*' enable git cvs svn
+
+function gl() {
+   local str opt
+   if [ $# != 0 ]; then
+       for i in $*; do
+           str="$str+$i"
+       done
+       str=`echo $str | sed 's/^\+//'`
+       opt='search?num=50&hl=ja&lr=lang_ja'
+       opt="${opt}&q=${str}"
+    fi
+    w3m http://www.google.co.jp/$opt
+}
 
 # or use pre_cmd, see man zshcontrib
 vcs_info_wrapper() {
