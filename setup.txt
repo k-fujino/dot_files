@@ -14,7 +14,7 @@ brew install tmux
 git clone https://github.com/vim/vim.git
 git checkout v7.4.393
 vim/srcフォルダに移動
-./configure --with-features=huge --enable-multibyte --disable-gui --without-x
+./configure --with-features=huge --enable-multibyte --disable-gui --without-x --enable-luainterp
 make
 sudo make install
 

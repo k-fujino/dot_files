@@ -5,7 +5,6 @@ if &compatible
 endif
 
 " Required:
-"set runtimepath+=/home/vagrant/.cache/dein/repos/github.com/Shougo/dein.vim
 set runtimepath+=$HOME/.cache/dein/repos/github.com/Shougo/dein.vim
 
 
@@ -19,10 +18,14 @@ if dein#load_state('$HOME/.cache/dein')
   call dein#add('$HOME/.cache/dein/repos/github.com/Shougo/dein.vim')
 
   " Add or remove your plugins here:
-  call dein#add('Shougo/neosnippet.vim')
+  call dein#add('Shougo/neocomplete.vim')
+  call dein#add('Shougo/neocomplcache')
   call dein#add('Shougo/neosnippet-snippets')
+  call dein#add('Shougo/neosnippet.vim')
+
   call dein#add('jelera/vim-javascript-syntax')
   call dein#add('tpope/vim-fugitive')
+
 
   " You can specify revision/branch/tag.
   call dein#add('Shougo/vimshell', { 'rev': '3787e5' })
@@ -43,7 +46,14 @@ endif
 
 "End dein Scripts-------------------------
 
-"autocmd vimenter * NERDTree
+"printer settings-----------------------------
+:set printoptions=duplex:long
+:set printoptions+=paper:A4
+:set printoptions+=wrap:y
+:set printoptions+=number:y
+:set printheader=%{strftime('%Y/%m/%d\ %H:%M')}
+:set printfont=r:Myrica_M:h12
+"End printer settings-------------------------
 
 set number
 set hlsearch
@@ -74,9 +84,6 @@ syntax on
 "colorscheme desert
 colorscheme wombat256mod
 
-"タブ、空白、改行の可視化
-"set list
-"set listchars=tab:>.,trail:_,eol:?,extends:>,precedes:<,nbsp:%
 
 "全角スペースをハイライト表示
 function! ZenkakuSpace()
@@ -91,4 +98,25 @@ if has('syntax')
     augroup END
     call ZenkakuSpace()
 endif
+
+
+"Snippet setting start--------------
+" Plugin key-mappings.
+imap <C-k>     <Plug>(neosnippet_expand_or_jump)
+smap <C-k>     <Plug>(neosnippet_expand_or_jump)
+"xmap <C-k>     <Plug>(neosnippet_expand_target)
+
+" SuperTab like snippets behavior.
+
+"smap <expr><TAB> neosnippet#expandable_or_jumpable() ? "\<Plug>(neosnippet_expand_or_jump)" : "\<TAB>"
+
+" For snippet_complete marker.
+"if has('conceal')
+"  set conceallevel=2 concealcursor=niv
+"endif
+
+"set snippet file dir
+let g:neosnippet#snippets_directory='~/.cache/my-snippets'
+let g:NeoComplCache_CacheLineCount=1000
+"Snippet setting end--------------
 
