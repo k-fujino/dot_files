@@ -84,6 +84,9 @@ syntax on
 "colorscheme desert
 colorscheme wombat256mod
 
+"typescriptのカラー表示
+autocmd BufRead,BufNewFile *.ts set filetype=javascript
+autocmd BufRead,BufNewFile *.tsx set filetype=javascript
 
 "全角スペースをハイライト表示
 function! ZenkakuSpace()
@@ -100,23 +103,4 @@ if has('syntax')
 endif
 
 
-"Snippet setting start--------------
-" Plugin key-mappings.
-imap <C-k>     <Plug>(neosnippet_expand_or_jump)
-smap <C-k>     <Plug>(neosnippet_expand_or_jump)
-"xmap <C-k>     <Plug>(neosnippet_expand_target)
-
-" SuperTab like snippets behavior.
-
-"smap <expr><TAB> neosnippet#expandable_or_jumpable() ? "\<Plug>(neosnippet_expand_or_jump)" : "\<TAB>"
-
-" For snippet_complete marker.
-"if has('conceal')
-"  set conceallevel=2 concealcursor=niv
-"endif
-
-"set snippet file dir
-let g:neosnippet#snippets_directory='~/.cache/my-snippets'
-let g:NeoComplCache_CacheLineCount=1000
-"Snippet setting end--------------
-
+set belloff=all

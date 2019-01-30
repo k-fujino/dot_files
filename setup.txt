@@ -24,3 +24,7 @@ sudo make install
 deinを入れてから、.vimrcをcopyしてpluginを導入する。
   vim7.4.8ならdeinを使ってfugitiveを使用可能
 
+
+## peco
+brew install peco
+
