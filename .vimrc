@@ -18,13 +18,16 @@ if dein#load_state('$HOME/.cache/dein')
   call dein#add('$HOME/.cache/dein/repos/github.com/Shougo/dein.vim')
 
   " Add or remove your plugins here:
-  call dein#add('Shougo/neocomplete.vim')
+  call dein#add('Shougo/neocomplete.vim')  "lua有効が必要
   call dein#add('Shougo/neocomplcache')
   call dein#add('Shougo/neosnippet-snippets')
   call dein#add('Shougo/neosnippet.vim')
 
   call dein#add('jelera/vim-javascript-syntax')
   call dein#add('tpope/vim-fugitive')
+
+  " 構文チェック
+  call dein#add('w0rp/ale')
 
 
   " You can specify revision/branch/tag.
@@ -66,6 +69,15 @@ set paste
 set ambiwidth=double "japanese sikaku sankaku layout
 set wildmode=list,full
 set history=5000
+
+
+"ctags-----------------------------
+set fileformats=unix,dos,mac
+set fileencodings=utf-8,sjis
+set tags=./tags;$HOME
+nnoremap <C-]> g<C-]>
+inoremap <C-]> <ESC>g<C-]>
+
 
 "cursol shape variable
 if empty($TMUX)
