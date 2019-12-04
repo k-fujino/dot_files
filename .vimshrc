@@ -1,0 +1,6 @@
+alias gp='git grep'
+alias lg='ls -a|grep'
+alias fp='find ./|grep'
+alias ..='cd ../'
+alias ...='cd ../../'
+alias c='cd'

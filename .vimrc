@@ -18,16 +18,43 @@ if dein#load_state('$HOME/.cache/dein')
   call dein#add('$HOME/.cache/dein/repos/github.com/Shougo/dein.vim')
 
   " Add or remove your plugins here:
-  call dein#add('Shougo/neocomplete.vim')  "lua有効が必要
-  call dein#add('Shougo/neocomplcache')
-  call dein#add('Shougo/neosnippet-snippets')
-  call dein#add('Shougo/neosnippet.vim')
+  " call dein#add('Shougo/neocomplete.vim')  "lua有効が必要
+  " call dein#add('Shougo/neocomplcache')
+
+" Ruby補完用
+  call dein#add('Shougo/deoplete.nvim')
+  if !has('nvim')
+    call dein#add('roxma/nvim-yarp')
+    call dein#add('roxma/vim-hug-neovim-rpc')
+  endif
+  let g:deoplete#enable_at_startup = 1
+  let g:deoplete#auto_complete_delay = 0
+  let g:python3_host_prog = expand('~/.pyenv/shims/python')
+  call dein#add('Shougo/denite.nvim')
+
+"  call dein#add('osyo-manga/vim-monster')
+"  let g:monster#completion#backend = 'solargraph'
+"  let g:neocomplete#sources#omni#input_patterns = {
+"  \   "ruby" : '[^. *\t]\.\w*\|\h\w*::',
+"  \}
+"  let g:monster#completion#solargraph#backend = "async_solargraph_suggest"
+
+  
+  call dein#add('Shougo/deoplete-rct')
+
+  call dein#add('Shougo/vimproc.vim', {'build': 'make'})
+
+  " call dein#add('Shougo/neosnippet-snippets')
+  " call dein#add('Shougo/neosnippet.vim')
 
   call dein#add('jelera/vim-javascript-syntax')
   call dein#add('tpope/vim-fugitive')
 
-  " 構文チェック
+  " 構文チェック (neovimで動作)
   call dein#add('w0rp/ale')
+
+  " Go言語用
+  call dein#add('fatih/vim-go')
 
 
   " You can specify revision/branch/tag.
@@ -39,7 +66,6 @@ if dein#load_state('$HOME/.cache/dein')
 endif
 
 " Required:
-filetype plugin indent on
 syntax enable
 
 " If you want to install not installed plugins on startup.
@@ -49,14 +75,6 @@ endif
 
 "End dein Scripts-------------------------
 
-"printer settings-----------------------------
-:set printoptions=duplex:long
-:set printoptions+=paper:A4
-:set printoptions+=wrap:y
-:set printoptions+=number:y
-:set printheader=%{strftime('%Y/%m/%d\ %H:%M')}
-:set printfont=r:Myrica_M:h12
-"End printer settings-------------------------
 
 set number
 set hlsearch
@@ -64,10 +82,8 @@ set ignorecase
 set smartcase
 set showmatch
 
-set paste
-
 set ambiwidth=double "japanese sikaku sankaku layout
-set wildmode=list,full
+set wildmode=longest,full
 set history=5000
 
 
@@ -77,6 +93,12 @@ set fileencodings=utf-8,sjis
 set tags=./tags;$HOME
 nnoremap <C-]> g<C-]>
 inoremap <C-]> <ESC>g<C-]>
+
+
+" Go setting-----------------------
+let g:go_bin_path = $GOPATH.'/bin'
+" filetype plugin indent on
+
 
 
 "cursol shape variable
@@ -92,9 +114,12 @@ endif
 
 set t_Co=256
 
-syntax on
+"file name 
+set laststatus=2
+
 "colorscheme desert
-colorscheme wombat256mod
+"colorscheme wombat256mod
+colorscheme molokai
 
 "typescriptのカラー表示
 autocmd BufRead,BufNewFile *.ts set filetype=javascript
@@ -116,3 +141,15 @@ endif
 
 
 set belloff=all
+
+set expandtab "タブ入力を複数の空白入力に置き換える
+set tabstop=2 "画面上でタブ文字が占める幅
+set shiftwidth=2 "自動インデントでずれる幅
+set softtabstop=2 "連続した空白に対してタブキーやバックスペースキーでカーソルが動く幅
+
+" ------------------------------------------
+nnoremap <silent> ,s :VimShell<CR>
+" Escをjjで
+inoremap <silent> jj <ESC>
+" ------------------------------------------
+

@@ -26,7 +26,12 @@ sudo make install
 mkdir -p ~/.cache/dein
 
 deinを入れてから、.vimrcをcopyしてpluginを導入する。
-  vim7.4.8ならdeinを使ってfugitiveを使用可能
+
+## neovimの導入
+設定ファイルをvimと共有
+mkdir -p ~/.config
+ln -s ~/.vim ~/.config/nvim
+ln -s ~/.vimrc ~/.config/nvim/init.vim
 
 ## ctagsの導入
 git clone https://github.com/universal-ctags/ctags.git
