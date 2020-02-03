@@ -36,8 +36,17 @@ case ${UID} in
     ;;
 esac
 
+
+
+# auto-jump  : zsh plug in setting
+# j tabで過去に行ったディレクトリを選べる
+[[ -s /home/k-fuji/.autojump/etc/profile.d/autojump.sh ]] && source /home/k-fuji/.autojump/etc/profile.d/autojump.sh
+
+
+
+
 # auto change directory
-#
+# ディレクトリ名を入れるだけでcdできる
 setopt auto_cd
 
 # auto directory pushd that you can get dirs list by cd -[tab]
@@ -99,6 +108,11 @@ setopt share_history        # share command history data
 ## Completion configuration
 #
 fpath=(${HOME}/zsh/functions/*(N-/) ${fpath})
+# zsh-completions用
+fpath=(~/download/zsh-completions/src $fpath)
+# fpathの後に記述
+autoload -U compinit && compinit -u
+
 #autoload -Uz cdls
 
 
@@ -121,7 +135,6 @@ export LSCOLORS=gxfxcxdxbxegedabagacad
 setopt complete_aliases     # aliased ls needs if file/dir completions work
 
 alias where="command -v"
-alias j="jobs -l"
 
 case "${OSTYPE}" in
 freebsd*|darwin*)
@@ -141,23 +154,25 @@ alias ll="ls -ltr"
 alias ..="cd ../"
 alias ...="cd ../../"
 alias ....="cd ../../../"
-alias v="vim"
+alias v="nvim"
 alias c="cd"
 alias g="git"
 alias gp="git grep"
 alias fp="find ./|grep"
 alias hg="history 1|grep"
 alias lg="ls -a|grep"
-alias ig="sed 's/\\\040/ /g' ~/.mysql_history|grep"
+alias tmux="tmux -2"
+alias tg="tig"
 #alias ctags="`brew --prefix`/bin/ctags"
 
-alias du="du -h"
 alias df="df -h"
-
 alias su="su -l"
+alias diff="colordiff -u"
 
-alias pt="/home/vagrant/piip_task_v2"
-alias envr="cd env/piip_backend/ruby-2.4/"
+alias ac="/home/k-fuji/development/account_mgr"
+alias si="/home/k-fuji/development/site_mgr"
+alias cl="/home/k-fuji/development/client_mgr"
+alias sn="/home/k-fuji/development/signup_api"
 
 [[ -s ${HOME}/.rvm/scripts/rvm ]] && source ~/.rvm/scripts/rvm
 
@@ -171,14 +186,29 @@ alias envr="cd env/piip_backend/ruby-2.4/"
 export PATH="$PATH:$HOME/.rvm/bin" # Add RVM to PATH for scripting
 export PATH=/opt/rh/qt48/root/usr/lib64/qt4/bin/${PATH:+:${PATH}}
 export PATH=/usr/local/Trolltech/Qt-4.7.4/bin:$PATH
+export PATH="$HOME/bin/bin:$PATH"
+export PATH="$PATH:/usr/local/go/bin"
+export PATH="$PATH:$HOME/go/bin"
 
 export RAILS_ENV="development"
 #export RAILS_ENV="test"
 
-export GIT_EDITOR=vim
+export MYSQL_USERNAME="k-fuji"
+export MYSQL_PASSWORD="password"
+export OBJECT_STORAGE_ACCESS_KEY_ID="PQTIROZFX2KWY1GU367O"
+export OBJECT_STORAGE_SECRET_ACCESS_KEY="8ei2CHgDIh3EfdY4jdSBtRhgOX+F+O856lrxC9f+"
 
+export GOPATH="$HOME/go"
 
+export GIT_EDITOR=nvim
 
+# python用
+export PYENV_ROOT="$HOME/.pyenv"
+export PATH="$PYENV_ROOT/bin:$PATH"
+eval "$(pyenv init -)"
+
+# neovim用
+[[ -s ${HOME}/.config ]] && export XDG_CONFIG_HOME=~/.config
 
 
 
@@ -192,18 +222,6 @@ zstyle ':vcs_info:(sv[nk]|bzr):*' branchformat '%b%F{1}:%F{3}%r'
 
 zstyle ':vcs_info:*' enable git cvs svn
 
-function gl() {
-   local str opt
-   if [ $# != 0 ]; then
-       for i in $*; do
-           str="$str+$i"
-       done
-       str=`echo $str | sed 's/^\+//'`
-       opt='search?num=50&hl=ja&lr=lang_ja'
-       opt="${opt}&q=${str}"
-    fi
-    w3m http://www.google.co.jp/$opt
-}
 
 # or use pre_cmd, see man zshcontrib
 vcs_info_wrapper() {
@@ -215,7 +233,4 @@ vcs_info_wrapper() {
 RPROMPT=$'$(vcs_info_wrapper)'
 
 
-
-
-
-
+[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
