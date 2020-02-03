@@ -50,7 +50,9 @@ if dein#load_state('$HOME/.cache/dein')
   call dein#add('jelera/vim-javascript-syntax')
   call dein#add('tpope/vim-fugitive')
 
-  " 構文チェック (neovimで動作)
+  call dein#add('easymotion/vim-easymotion')
+
+  " 構文チェック
   call dein#add('w0rp/ale')
 
   " Go言語用
@@ -120,6 +122,26 @@ set laststatus=2
 "colorscheme desert
 "colorscheme wombat256mod
 colorscheme molokai
+
+"easy motion用 --------------------
+map <Leader> <Plug>(easymotion-prefix)
+let g:EasyMotion_do_mapping = 0 " Disable default mappings
+
+" Jump to anywhere you want with minimal keystrokes, with just one key binding.
+" `s{char}{label}`
+" nmap s <Plug>(easymotion-overwin-f)
+" or
+" `s{char}{char}{label}`
+" Need one more keystroke, but on average, it may be more comfortable.
+nmap s <Plug>(easymotion-overwin-f2)
+
+" Turn on case insensitive feature
+let g:EasyMotion_smartcase = 1
+
+" JK motions: Line motions
+map <Leader>j <Plug>(easymotion-j)
+map <Leader>k <Plug>(easymotion-k)
+"easy motion用 end--------------------
 
 "typescriptのカラー表示
 autocmd BufRead,BufNewFile *.ts set filetype=javascript
