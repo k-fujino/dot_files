@@ -1,3 +1,3 @@
-set main-view = id date author:email-user commit-title:graph=yes,refs=yes
+set main-view = id:width=8 date author:email-user commit-title:graph=yes,refs=yes
 # + で commit --amend
 bind generic +      !git commit --amend --allow-empty
