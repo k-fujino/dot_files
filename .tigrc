@@ -1,3 +1,5 @@
 set main-view = id:width=8 date author:email-user commit-title:graph=yes,refs=yes
 # + で commit --amend
 bind generic +      !git commit --amend --allow-empty
+bind generic <Ctrl-f>      scroll-page-down
+bind generic <Ctrl-b>      scroll-page-up
