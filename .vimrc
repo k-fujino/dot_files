@@ -58,6 +58,9 @@ if dein#load_state('$HOME/.cache/dein')
   " Go言語用
   call dein#add('fatih/vim-go')
 
+  " gtag用
+  call dein#add('lighttiger2505/gtags.vim')
+  
 
   " You can specify revision/branch/tag.
   call dein#add('Shougo/vimshell', { 'rev': '3787e5' })
@@ -87,15 +90,33 @@ set showmatch
 set ambiwidth=double "japanese sikaku sankaku layout
 set wildmode=longest,full
 set history=5000
+set hidden
 
 
 "ctags-----------------------------
-set fileformats=unix,dos,mac
-set fileencodings=utf-8,sjis
-set tags=./tags;$HOME
-nnoremap <C-]> g<C-]>
-inoremap <C-]> <ESC>g<C-]>
+"set fileformats=unix,dos,mac
+"set fileencodings=utf-8,sjis
+"set tags=./tags;$HOME
+"nnoremap <C-]> g<C-]>
+"inoremap <C-]> <ESC>g<C-]>
 
+"gtags-----------------------------
+nnoremap <silent> <Space>f :Gtags -f %<CR>
+nnoremap <silent> <Space>j :GtagsCursor<CR>
+nnoremap <silent> <Space>d :<C-u>exe('Gtags '.expand('<cword>'))<CR>
+nnoremap <silent> <Space>r :<C-u>exe('Gtags -r '.expand('<cword>'))<CR>
+
+" buffer 切り替え
+nnoremap <silent> <C-j> :bprev<CR>
+nnoremap <silent> <C-k> :bnext<CR>
+
+"nnoremap <C-h> :Gtags -f %<CR>
+"nnoremap <C-j> :GtagsCursor<CR>
+"nnoremap <C-n> :cn<CR>
+"nnoremap <C-p> :cp<CR>
+"nnoremap <C-g> :Gtags
+"
+"nnoremap <C-o> :bp<CR>
 
 " Go setting-----------------------
 let g:go_bin_path = $GOPATH.'/bin'
@@ -168,6 +189,9 @@ set expandtab "タブ入力を複数の空白入力に置き換える
 set tabstop=2 "画面上でタブ文字が占める幅
 set shiftwidth=2 "自動インデントでずれる幅
 set softtabstop=2 "連続した空白に対してタブキーやバックスペースキーでカーソルが動く幅
+
+"勝手にFile末尾に改行入れさせない
+:set nofixendofline
 
 " ------------------------------------------
 nnoremap <silent> ,s :VimShell<CR>
