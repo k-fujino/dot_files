@@ -167,7 +167,7 @@ alias df="df -h"
 alias su="su -l"
 alias diff="colordiff -u"
 
-alias ac="/home/k-fuji/development/account_mgr"
+alias ac="/home/k-fuji/development/middleware/account_mgr"
 alias si="/home/k-fuji/development/site_mgr"
 alias cl="/home/k-fuji/development/client_mgr"
 alias sn="/home/k-fuji/development/signup_api"
@@ -191,24 +191,45 @@ export PATH="$PATH:$HOME/go/bin"
 export RAILS_ENV="development"
 #export RAILS_ENV="test"
 
-export MYSQL_USERNAME="k-fuji"
-export MYSQL_PASSWORD="password"
-export OBJECT_STORAGE_ACCESS_KEY_ID="PQTIROZFX2KWY1GU367O"
-export OBJECT_STORAGE_SECRET_ACCESS_KEY="8ei2CHgDIh3EfdY4jdSBtRhgOX+F+O856lrxC9f+"
+# export OBJECT_STORAGE_ACCESS_KEY_ID="xxxx"
+# export OBJECT_STORAGE_SECRET_ACCESS_KEY="yyyy"
+
+# rspecのRails.application.routes.default_url_options用 
+export OBJECT_STORAGE_BUCKET="minio1"
+export OBJECT_STORAGE_RETURN_URL="https://127.0.0.1:9000/v2/profile_image"
+export OBJECT_STORAGE_ENDPOINT="http://127.0.0.1:9000"      # ローカルのminioのuri
+export OBJECT_STORAGE_HOST="localhost:9001"
+
+export OBJECT_STORAGE_ACCESS_KEY_ID="xxx"  # 各自のminioのACCESS_KEY_IDに直す
+export OBJECT_STORAGE_SECRET_ACCESS_KEY="yyy"   # 各自のminioのSECRET_ACCESS_KEYに直す
+export OBJECT_STORAGE_MOUNT_PATH="/mnt/store"               # catalinaは/mnt/storeを作れない為,/tmp/store等に変更
 
 export GOPATH="$HOME/go"
 
 export GIT_EDITOR=nvim
 
+
+# dockerのaccount_mgr用
+[[ -s ${HOME}/development/middleware/account_mgr/.env ]] && source ~/development/middleware/account_mgr/.env
+
+
 # python用
 export PYENV_ROOT="$HOME/.pyenv"
 export PATH="$PYENV_ROOT/bin:$PATH"
-eval "$(pyenv init -)"
+# eval "$(pyenv init -)"
 
 # neovim用
 [[ -s ${HOME}/.config ]] && export XDG_CONFIG_HOME=~/.config
 
+# docker mysqlにつなぐ為
+# export MYSQL_HOST="127.0.0.1"  # dockerのMySQL用
 
+# site mgr用
+ export MYSQL_USERNAME="root"
+ export MYSQL_PASSWORD="root"
+
+# acl用
+ export AR_CONNECTION_POOL_SIZE=5
 
 setopt prompt_subst
 autoload -Uz vcs_info
@@ -238,4 +259,12 @@ function gitcheckout() {
 RPROMPT=$'$(vcs_info_wrapper)'
 
 
-[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+if [ -e "$HOME/.nodenv" ]
+then
+    export NODENV_ROOT="$HOME/.nodenv"
+    export PATH="$NODENV_ROOT/bin:$PATH"
+    if command -v nodenv 1>/dev/null 2>&1
+    then
+        eval "$(nodenv init -)"
+    fi
+fi
