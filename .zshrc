@@ -153,6 +153,7 @@ alias ..="cd ../"
 alias ...="cd ../../"
 alias ....="cd ../../../"
 alias v="nvim"
+alias vim="nvim"
 alias c="cd"
 alias g="git"
 alias gp="git grep"
@@ -171,6 +172,8 @@ alias ac="/home/k-fuji/development/middleware/account_mgr"
 alias si="/home/k-fuji/development/site_mgr"
 alias cl="/home/k-fuji/development/client_mgr"
 alias sn="/home/k-fuji/development/signup_api"
+alias python='python3'
+alias rg='ranger'
 
 [[ -s ${HOME}/.rvm/scripts/rvm ]] && source ~/.rvm/scripts/rvm
 
@@ -190,6 +193,7 @@ export PATH="$PATH:$HOME/go/bin"
 
 export RAILS_ENV="development"
 #export RAILS_ENV="test"
+export EDITOR=nvim  # rangerのデフォルトエディタ
 
 # export OBJECT_STORAGE_ACCESS_KEY_ID="xxxx"
 # export OBJECT_STORAGE_SECRET_ACCESS_KEY="yyyy"
@@ -213,13 +217,19 @@ export GIT_EDITOR=nvim
 [[ -s ${HOME}/development/middleware/account_mgr/.env ]] && source ~/development/middleware/account_mgr/.env
 
 
-# python用
+# python3 バージョン管理用
 export PYENV_ROOT="$HOME/.pyenv"
-export PATH="$PYENV_ROOT/bin:$PATH"
-# eval "$(pyenv init -)"
+if [ -d "${PYENV_ROOT}" ]; then
+    export PATH=${PYENV_ROOT}/bin:$PATH
+    eval "$(pyenv init -)"
+fi
 
 # neovim用
 [[ -s ${HOME}/.config ]] && export XDG_CONFIG_HOME=~/.config
+
+# clamAv
+[[ -s /usr/local/clamav ]] && export PATH=/usr/local/clamav/bin:/usr/local/clamav/sbin:$PATH
+
 
 # docker mysqlにつなぐ為
 # export MYSQL_HOST="127.0.0.1"  # dockerのMySQL用
