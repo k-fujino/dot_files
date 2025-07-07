@@ -173,7 +173,7 @@ alias si="/home/k-fuji/development/site_mgr"
 alias cl="/home/k-fuji/development/client_mgr"
 alias sn="/home/k-fuji/development/signup_api"
 alias python='python3'
-alias rg='ranger'
+alias op='open .'
 
 [[ -s ${HOME}/.rvm/scripts/rvm ]] && source ~/.rvm/scripts/rvm
 
@@ -278,3 +278,6 @@ then
         eval "$(nodenv init -)"
     fi
 fi
+
+. /opt/homebrew/opt/asdf/libexec/asdf.sh
+export PATH="/opt/homebrew/opt/postgresql@14/bin:$PATH"
