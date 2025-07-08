@@ -1,0 +1,239 @@
+Rails 6.0.2 → Rails 8.0 & Ruby 3.0 → Ruby 3.4 移行設計書
+1. 概要
+本文書では、既存のRails 6.0.2とRuby 3.0のシステムをRails 8.0とRuby 3.4の最新版にアップグレードする移行計画を策定します。
+1.1 現在の環境
+* Rails: 6.0.2
+* Ruby: 3.0
+* テストフレームワーク: Minitest
+* プロダクション環境: Google Cloud Platform
+1.2 移行後の環境
+* Rails: 8.0.2（最新安定版）
+* Ruby: 3.4.4（最新安定版）
+* テストフレームワーク: Minitest（継続）
+* プロダクション環境: Google Cloud Platform（継続）
+2. 移行戦略
+2.1 段階的アップグレード計画
+Phase 1: Ruby アップグレード
+1. Ruby 3.0 → Ruby 3.4.4
+Phase 2: Rails アップグレード
+1. Rails 6.0.2 → Rails 6.1（中間バージョン）
+2. Rails 6.1 → Rails 7.0
+3. Rails 7.0 → Rails 7.2
+4. Rails 7.2 → Rails 8.0.2
+2.2 デュアルブート戦略
+* next_rails gemを使用して段階的移行を実現
+* 各バージョンで徹底的なテストを実施
+3. Ruby 3.0 → Ruby 3.4.4 移行
+3.1 主要な変更点
+新機能:
+* it ブロックパラメータリファレンス
+* Prismパーサーがデフォルト
+* 改良されたYJIT
+* Modular GC
+* Happy Eyeballs Version 2 サポート
+互換性確認項目:
+* String literalsの"chilled"化（3.4で警告、3.5でエラー予定）
+* Symbol#to_sの動作変更
+* 非推奨APIの削除
+3.2 移行手順
+# rbenvを使用してRuby 3.4.4をインストール
+rbenv install 3.4.4
+rbenv global 3.4.4
+
+# Gemfileの更新
+echo "ruby '3.4.4'" > .ruby-version
+
+# Bundlerの再インストール
+gem install bundler
+bundle install
+4. Rails 6.0.2 → Rails 8.0.2 移行
+4.1 Rails 8.0の主要な新機能
+認証システム:
+* ネイティブ認証ジェネレータ
+* Deviseの代替として使用可能
+Solid Trifecta:
+* Solid Queue（ActiveJob用）
+* Solid Cache（Rails.cache用）
+* Solid Cable（ActionCable用）
+* RedisなしでのSQLiteベース運用
+アセットパイプライン:
+* Propshaftがデフォルトのアセットパイプライン
+* Sprocketsからの移行
+デプロイメント:
+* Kamal 2による簡単デプロイ
+* Thruster Proxyの統合
+4.2 各段階の移行手順
+Rails 6.0.2 → Rails 6.1
+# Gemfile
+gem 'rails', '~> 6.1.0'
+
+# 設定変更
+rails app:update
+主要な変更点:
+* Zeitwerkオートローダーがデフォルト
+* belongs_toのオプション必須化
+* ActiveStorageの改善
+Rails 6.1 → Rails 7.0
+# Gemfile
+gem 'rails', '~> 7.0.0'
+主要な変更点:
+* Node.js依存関係の削除
+* Import mapsの導入
+* Turbo/Stimulusのデフォルト採用
+Rails 7.0 → Rails 7.2
+# Gemfile
+gem 'rails', '~> 7.2.0'
+主要な変更点:
+* 開発者体験の向上
+* セキュリティ強化
+Rails 7.2 → Rails 8.0
+# Gemfile
+gem 'rails', '~> 8.0.0'
+主要な変更点:
+* Ruby 3.2.0以上が必須
+* 多数の非推奨機能の削除
+4.3 削除される非推奨機能（Rails 8.0）
+Railties:
+* rails/console/appファイル
+* rails/console/helpersファイル
+* Rails::ConsoleMethodsのサポート
+ActiveRecord:
+* config.active_record.commit_transaction_on_non_local_return
+* config.active_record.allow_deprecated_singular_associations_name
+* キーワード引数でのenum定義サポート
+ActionController:
+* Rails.application.config.action_controller.allow_deprecated_parameters_hash_equality
+5. テスト環境（Minitest）への影響
+5.1 Minitestの互換性
+* Rails 8.0はMinitestを継続サポート
+* 既存のテストコードは基本的に互換性を維持
+5.2 必要な修正
+# Rails 8.0でのテスト実行
+rails test
+
+# 非推奨警告の確認
+RAILS_ENV=test rails test --verbose
+6. Google Cloud Platform対応
+6.1 Rails 8.0のGCP互換性
+* Cloud RunでのRails 8.0サポート確認済み
+* App Engine Standardでも動作
+* Cloud SQL PostgreSQL/MySQLとの互換性維持
+6.2 デプロイメント戦略
+Kamal 2 + GCP:
+# config/deploy.yml
+service: myapp
+image: myapp
+servers:
+  - <GCP_VM_IP>
+registry:
+  server: gcr.io
+  username: _json_key
+  password:
+    - GOOGLE_APPLICATION_CREDENTIALS
+既存のGCPワークフロー維持:
+* Cloud Build継続使用
+* Cloud SQL接続維持
+* Secret Manager活用
+7. リスク評価と対策
+7.1 高リスク項目
+互換性破綻:
+* カスタムRakeタスク
+* 独自のActiveRecord拡張
+* 古いgemの非互換性
+対策:
+* 徹底的なテスト
+* デュアルブート環境での検証
+* 段階的ロールアウト
+7.2 中リスク項目
+設定変更:
+* 新しいデフォルト設定の適用
+* セキュリティ設定の更新
+対策:
+* 設定ファイルの詳細レビュー
+* rails app:updateの活用
+8. 移行スケジュール
+Phase 1: 準備（2週間）
+* [ ] テストカバレッジの確認・向上
+* [ ] 依存gemの互換性調査
+* [ ] デュアルブート環境構築
+Phase 2: Ruby移行（1週間）
+* [ ] Ruby 3.4.4へのアップグレード
+* [ ] テスト実行・問題修正
+* [ ] CI/CD環境更新
+Phase 3: Rails段階移行（各1週間 × 4回）
+* [ ] Rails 6.1移行
+* [ ] Rails 7.0移行
+* [ ] Rails 7.2移行
+* [ ] Rails 8.0移行
+Phase 4: 本番展開（1週間）
+* [ ] ステージング環境での最終検証
+* [ ] 本番環境移行
+* [ ] 監視・モニタリング
+9. 必要な追加資料
+以下の資料が不足している場合、移行前に準備が必要です：
+9.1 技術文書
+* [ ] 現在のgemリスト（Gemfile.lock）
+* [ ] カスタマイズした設定ファイル一覧
+* [ ] 独自のRakeタスク一覧
+* [ ] ActiveRecord拡張・カスタマイズ詳細
+9.2 環境文書
+* [ ] 現在のGCP構成詳細
+* [ ] CI/CDパイプライン設定
+* [ ] 環境変数・秘密情報管理方法
+* [ ] データベース構成・移行履歴
+9.3 運用文書
+* [ ] 現在のデプロイメント手順
+* [ ] 監視・ログ収集設定
+* [ ] バックアップ・リストア手順
+* [ ] 障害対応手順
+9.4 テスト文書
+* [ ] 現在のテストカバレッジレポート
+* [ ] 重要なビジネスロジックのテストケース
+* [ ] パフォーマンステスト結果
+* [ ] セキュリティテスト結果
+10. 成功の指標
+10.1 技術指標
+* すべてのテストが通過
+* アプリケーションの起動・正常動作
+* パフォーマンス劣化なし（±5%以内）
+* セキュリティ脆弱性の改善
+10.2 運用指標
+* ゼロダウンタイム移行の実現
+* 移行後24時間のエラー発生率 < 0.1%
+* ユーザー体験の維持・向上
+11. ロールバック計画
+11.1 緊急時の対応
+* 各段階でのスナップショット取得
+* 迅速なロールバック手順の確立
+* データベース移行の可逆性確保
+11.2 判断基準
+* 重大なパフォーマンス問題発生
+* ビジネスクリティカルな機能の停止
+* セキュリティ脆弱性の発見
+
+注意: この移行計画は綿密なテストと段階的な実施が必要です。各段階で十分な検証を行い、問題が発生した場合は即座に前のバージョンにロールバックできる体制を整えてください。
+
+
+
+
+###### 
+不足している可能性のある重要な資料
+移行を成功させるために、以下の資料の確認・準備をお勧めします：
+技術情報
+1. 現在のGemfile.lockの詳細 - 依存関係の互換性確認のため
+2. カスタムRakeタスクの一覧 - Rails 8.0での動作確認が必要
+3. ActiveRecord拡張やモンキーパッチ - 互換性問題の可能性が高い
+4. config/initializers配下のカスタム設定 - 新しいデフォルト値との衝突確認
+Google Cloud関連
+5. 現在のCloud Build設定（cloudbuild.yaml） - Rails 8.0対応への更新が必要
+6. app.yamlまたはDockerfile - 新しいRuby/Railsバージョンへの対応
+7. 環境変数とSecret Managerの使用状況 - Rails 8.0の新しい秘密管理方式への移行検討
+運用・監視
+8. 現在のパフォーマンスベースライン - 移行後の比較のため
+9. エラー監視ツールの設定 - New RelicやSentryなどの設定確認
+移行計画では特に以下の点にご注意ください：
+* 段階的移行が重要: 一気にRails 8.0にアップグレードするのではなく、6.1 → 7.0 → 7.2 → 8.0の順で実施
+* Ruby 3.2.0以上が必須: Rails 8.0の要件として、現在のRuby 3.0からは段階的にアップグレード
+* Solid系アダプターの検討: Redis依存を減らせる可能性がありますが、既存のRedis使用部分の移行計画も必要
+何か具体的な質問や、追加で調べたい項目があればお聞かせください。
+
