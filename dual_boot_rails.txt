@@ -1,0 +1,114 @@
+Railsのデュアルブート戦略とは
+1. 基本概念
+一つのアプリケーションコードで、Rails 6.0とRails 8.0の両方で動作確認ができる仕組み
+同じアプリ
+├── Gemfile (Rails 6.0用)
+├── Gemfile.next (Rails 8.0用)  
+├── Gemfile.lock (Rails 6.0用)
+├── Gemfile.next.lock (Rails 8.0用)
+└── アプリケーションコード（共通）
+2. next_rails gemを使った実装
+https://github.com/fastruby/next_rails
+https://www.fastruby.io/blog/dual-boot-ruby.html
+https://dev.to/kreopelle/what-s-a-dual-boot-569n
+https://blog.testdouble.com/posts/2019-09-03-3-keys-to-upgrading-rails/
+https://medium.com/one-medical-technology/rails-upgrade-guide-how-to-tackle-a-major-upgrade-using-dual-booting-d1dda62a3a67
+
+3. 実際の仕組み
+ステップ1: next_rails gem のインストール
+gem install next_rails
+next_rails --init
+これにより以下が作成されます：
+プロジェクト/
+├── Gemfile              # 現在のRails 6.0用
+├── Gemfile.next         # 新しいRails 8.0用（Gemfileへのシンボリックリンク）
+├── Gemfile.lock         # Rails 6.0の依存関係
+└── Gemfile.next.lock    # Rails 8.0の依存関係
+ステップ3: Gemfileの修正
+# Gemfile
+def next?
+  File.basename(__FILE__) == "Gemfile.next"
+end
+
+if next?
+  gem "rails", "~> 8.0.0"  # 新しいバージョン
+else
+  gem "rails", "~> 6.0.2"  # 現在のバージョン
+end
+
+# 他のgemも同様に条件分岐
+if next?
+  gem "bootsnap", ">= 1.4.4"
+else
+  gem "bootsnap", ">= 1.4.2"
+end
+4. 使用方法
+# Rails 6.0で実行（通常の開発）
+bundle install
+rails server
+rails test
+
+# Rails 8.0で実行（アップグレード作業）
+next bundle install          # Gemfile.nextを使ってインストール
+next rails server           # Rails 8.0でサーバー起動
+next rails test             # Rails 8.0でテスト実行
+next rails console          # Rails 8.0でコンソール
+5. コード内での条件分岐
+# app/models/user.rb
+class User < ApplicationRecord
+  if NextRails.next?
+    # Rails 8.0用のコード
+    has_many :posts, dependent: :destroy_async
+  else
+    # Rails 6.0用のコード  
+    has_many :posts, dependent: :destroy
+  end
+end
+6. CI/CDでの活用
+```
+# .github/workflows/test.yml
+name: Test
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - gemfile: Gemfile
+            rails_version: "6.0"
+          - gemfile: Gemfile.next
+            rails_version: "8.0"
+    
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: 3.4
+          bundler-cache: true
+      
+      - name: Run tests
+        run: |
+          export BUNDLE_GEMFILE=${{ matrix.gemfile }}
+          bundle exec rails test
+```
+7. プロダクション環境での活用
+```
+# 本番環境でRails 8.0を試す（一部のサーバーのみ）
+BUNDLE_GEMFILE=Gemfile.next bundle exec rails server
+
+# 問題があれば即座にロールバック
+BUNDLE_GEMFILE=Gemfile bundle exec rails server
+```
+8. 完了後のクリーンアップ
+すべての移行が完了したら
+```
+# 条件分岐コードを削除
+# Gemfile.nextとGemfile.next.lockを削除
+rm Gemfile.next Gemfile.next.lock
+
+# Gemfileから条件分岐を削除
+# gem "rails", "~> 8.0.0" のみ残す
+```
