@@ -6,134 +6,229 @@ class StackAggregationsControllerTest < ActionDispatch::IntegrationTest
   setup do
     signed_in_user(:user, { role: :administrator })
     @identifier = :foo
-    @target_date = Date.new(2017, 1, 31)
-    @stack_aggregation_params = { 
-      identifier: @identifier, 
-      year: @target_date.year, 
-      month: @target_date.month, 
-      including_tax: true 
-    }
   end
 
-  test "should get index without params" do
+  test "パラメータなしでインデックスを取得" do
     get stack_aggregations_path
     assert_response :success
-    assert_not_nil assigns(:stack_aggregator)
+    assert_template :index
+    assert assigns(:stack_aggregator)
+    assert_not assigns(:stack_aggregator).aggregate
   end
 
-  test "should get index with valid params" do
-    # StackAggregatorが正常にaggregateできることを前提とする
-    StackAggregator.any_instance.stubs(:aggregate).returns(true)
+  test "有効なパラメータでインデックスを取得" do
+    target_date = Date.new(2017, 1, 31)
+    stack_aggregation_params = { 
+      identifier: @identifier, 
+      year: target_date.year, 
+      month: target_date.month, 
+      including_tax: true 
+    }
     
-    get stack_aggregations_path, params: { q: @stack_aggregation_params }
+    get stack_aggregations_path, params: { q: stack_aggregation_params }
     
     assert_response :success
-    assert_not_nil assigns(:stack_aggregator)
-    assert_equal @identifier.to_s, assigns(:stack_aggregator).identifier
-    assert_equal @target_date.year, assigns(:stack_aggregator).year
-    assert_equal @target_date.month, assigns(:stack_aggregator).month
-    assert_equal true, assigns(:stack_aggregator).including_tax
+    assert_template :index
+    assert assigns(:stack_aggregator)
+    assert_equal @identifier, assigns(:stack_aggregator).identifier
+    assert_equal target_date.year, assigns(:stack_aggregator).year
+    assert_equal target_date.month, assigns(:stack_aggregator).month
+    assert assigns(:stack_aggregator).including_tax
   end
 
-  test "should handle aggregation failure" do
-    # StackAggregatorがaggregateに失敗した場合
-    StackAggregator.any_instance.stubs(:aggregate).returns(false)
-    
-    get stack_aggregations_path, params: { q: @stack_aggregation_params }
+  test "不正なパラメータを除外してインデックスを取得" do
+    get stack_aggregations_path, params: { 
+      q: { 
+        identifier: @identifier, 
+        year: 2017, 
+        month: 1, 
+        including_tax: true,
+        invalid_param: 'should_be_filtered' # permitted_paramsで除外される
+      } 
+    }
     
     assert_response :success
-    # aggregateがfalseの場合の動作をテスト
+    assert_template :index
+    assert assigns(:stack_aggregator)
+    # invalid_paramは設定されていないことを確認
+    assert_not_respond_to assigns(:stack_aggregator), :invalid_param
   end
 
-  test "download stack aggregator csv" do
-    StackAggregator.any_instance.stubs(:aggregate).returns(true)
+  test "HTML形式でCSVダウンロードリンクが表示される" do
+    target_date = Date.new(2017, 1, 31)
+    stack_aggregation_params = { 
+      identifier: @identifier, 
+      year: target_date.year, 
+      month: target_date.month, 
+      including_tax: true 
+    }
     
-    get stack_aggregations_path, params: { q: @stack_aggregation_params, format: :csv }
+    get stack_aggregations_path, params: { q: stack_aggregation_params }
+    
+    assert_response :success
+    # CSVダウンロードリンクがページに含まれていることを確認
+    assert_select 'a[href*="format=csv"]'
+  end
+
+  test "CSVダウンロード形式でスタックアグリゲーターを取得" do
+    target_date = Date.new(2017, 1, 31)
+    stack_aggregation_params = { 
+      identifier: @identifier, 
+      year: target_date.year, 
+      month: target_date.month, 
+      including_tax: true 
+    }
+    
+    get stack_aggregations_path, params: { q: stack_aggregation_params, format: :csv }
 
     assert_response :success
     assert_equal "text/csv", response.header["Content-Type"]
     
-    # Content-Dispositionヘッダーでファイル名が設定されているかテスト
-    expected_filename = "2017-1-obelisk-foo-tax-included.csv"
-    assert_match expected_filename, response.header["Content-Disposition"]
+    # ファイル名の形式をチェック
+    expected_filename = "#{target_date.year}-#{target_date.month}-obelisk-#{@identifier}-tax-included.csv"
+    assert response.header["Content-Disposition"].include?(expected_filename)
   end
 
-  test "should generate correct filename for tax included" do
-    StackAggregator.any_instance.stubs(:aggregate).returns(true)
-    StackAggregator.any_instance.stubs(:year).returns(2017)
-    StackAggregator.any_instance.stubs(:month).returns(1)
-    StackAggregator.any_instance.stubs(:identifier).returns('foo')
-    StackAggregator.any_instance.stubs(:including_tax).returns(true)
+  test "税抜きパラメータでCSVダウンロード" do
+    target_date = Date.new(2017, 1, 31)
+    stack_aggregation_params = { 
+      identifier: @identifier, 
+      year: target_date.year, 
+      month: target_date.month, 
+      including_tax: false 
+    }
     
-    get stack_aggregations_path, params: { q: @stack_aggregation_params, format: :csv }
+    get stack_aggregations_path, params: { q: stack_aggregation_params, format: :csv }
+
+    assert_response :success
+    assert_equal "text/csv", response.header["Content-Type"]
     
-    expected_filename = "2017-1-obelisk-foo-tax-included.csv"
-    assert_match expected_filename, response.header["Content-Disposition"]
+    # ファイル名に"excluded"が含まれることを確認
+    expected_filename = "#{target_date.year}-#{target_date.month}-obelisk-#{@identifier}-tax-excluded.csv"
+    assert response.header["Content-Disposition"].include?(expected_filename)
   end
 
-  test "should generate correct filename for tax excluded" do
-    params_without_tax = @stack_aggregation_params.merge(including_tax: false)
-    
-    StackAggregator.any_instance.stubs(:aggregate).returns(true)
-    StackAggregator.any_instance.stubs(:year).returns(2017)
-    StackAggregator.any_instance.stubs(:month).returns(1)
-    StackAggregator.any_instance.stubs(:identifier).returns('foo')
-    StackAggregator.any_instance.stubs(:including_tax).returns(false)
-    
-    get stack_aggregations_path, params: { q: params_without_tax, format: :csv }
-    
-    expected_filename = "2017-1-obelisk-foo-tax-excluded.csv"
-    assert_match expected_filename, response.header["Content-Disposition"]
-  end
-
-  test "should respond to html format" do
-    StackAggregator.any_instance.stubs(:aggregate).returns(true)
-    
-    get stack_aggregations_path, params: { q: @stack_aggregation_params, format: :html }
+  test "年のみ指定でインデックスを取得" do
+    get stack_aggregations_path, params: { q: { year: 2017 } }
     
     assert_response :success
+    assert_template :index
+    assert assigns(:stack_aggregator)
+    assert_equal 2017, assigns(:stack_aggregator).year
+    assert_nil assigns(:stack_aggregator).month
+    assert_nil assigns(:stack_aggregator).identifier
   end
 
-  test "should filter permitted params" do
-    params_with_extra = @stack_aggregation_params.merge(
-      unauthorized_param: 'should_be_filtered',
-      another_bad_param: 'also_filtered'
-    )
-    
-    get stack_aggregations_path, params: { q: params_with_extra }
+  test "月のみ指定でインデックスを取得" do
+    get stack_aggregations_path, params: { q: { month: 1 } }
     
     assert_response :success
-    # 許可されたパラメータのみが使用されることを確認
-    aggregator = assigns(:stack_aggregator)
-    assert_equal @identifier.to_s, aggregator.identifier
-    assert_equal @target_date.year, aggregator.year
-    assert_equal @target_date.month, aggregator.month
-    assert_equal true, aggregator.including_tax
+    assert_template :index
+    assert assigns(:stack_aggregator)
+    assert_equal 1, assigns(:stack_aggregator).month
+    assert_nil assigns(:stack_aggregator).year
+    assert_nil assigns(:stack_aggregator).identifier
   end
 
-  test "should handle empty params" do
-    get stack_aggregations_path, params: { q: {} }
+  test "identifierのみ指定でインデックスを取得" do
+    get stack_aggregations_path, params: { q: { identifier: @identifier } }
+    
     assert_response :success
+    assert_template :index
+    assert assigns(:stack_aggregator)
+    assert_equal @identifier, assigns(:stack_aggregator).identifier
+    assert_nil assigns(:stack_aggregator).year
+    assert_nil assigns(:stack_aggregator).month
   end
 
-  test "should handle missing params" do
+  test "including_taxのみ指定でインデックスを取得" do
+    get stack_aggregations_path, params: { q: { including_tax: false } }
+    
+    assert_response :success
+    assert_template :index
+    assert assigns(:stack_aggregator)
+    assert_not assigns(:stack_aggregator).including_tax
+    assert_nil assigns(:stack_aggregator).year
+    assert_nil assigns(:stack_aggregator).month
+    assert_nil assigns(:stack_aggregator).identifier
+  end
+
+  test "resource_classヘルパーメソッドの動作確認" do
     get stack_aggregations_path
+    
     assert_response :success
+    # ヘルパーメソッドが正しく定義されていることを確認するため、
+    # controllerインスタンスから直接アクセス
+    assert_equal ::StackAggregator, @controller.send(:resource_class)
   end
 
-  test "resource_class should return StackAggregator" do
-    controller = StackAggregationsController.new
-    assert_equal ::StackAggregator, controller.send(:resource_class)
+  test "permitted_paramsメソッドの動作確認" do
+    # 全てのpermitted_paramsを含むリクエスト
+    all_params = {
+      identifier: @identifier,
+      year: 2017,
+      month: 1,
+      including_tax: true
+    }
+    
+    get stack_aggregations_path, params: { q: all_params }
+    
+    assert_response :success
+    
+    # controller内でpermitted_paramsが正しく処理されることを確認
+    stack_aggregator = assigns(:stack_aggregator)
+    assert_equal @identifier, stack_aggregator.identifier
+    assert_equal 2017, stack_aggregator.year
+    assert_equal 1, stack_aggregator.month
+    assert stack_aggregator.including_tax
+  end
+
+  test "basenameメソッドによるファイル名生成の確認" do
+    target_date = Date.new(2017, 1, 31)
+    stack_aggregation_params = { 
+      identifier: @identifier, 
+      year: target_date.year, 
+      month: target_date.month, 
+      including_tax: true 
+    }
+    
+    get stack_aggregations_path, params: { q: stack_aggregation_params, format: :csv }
+    
+    assert_response :success
+    
+    # basenameの構成要素が正しく含まれていることを確認
+    content_disposition = response.header["Content-Disposition"]
+    assert content_disposition.include?("2017")
+    assert content_disposition.include?("1") 
+    assert content_disposition.include?("obelisk")
+    assert content_disposition.include?(@identifier.to_s)
+    assert content_disposition.include?("tax")
+    assert content_disposition.include?("included")
+  end
+
+  test "filenameメソッドによるCSV拡張子の確認" do
+    target_date = Date.new(2017, 1, 31)
+    stack_aggregation_params = { 
+      identifier: @identifier, 
+      year: target_date.year, 
+      month: target_date.month, 
+      including_tax: true 
+    }
+    
+    get stack_aggregations_path, params: { q: stack_aggregation_params, format: :csv }
+    
+    assert_response :success
+    
+    # ファイル名がCSV拡張子で終わることを確認
+    content_disposition = response.header["Content-Disposition"]
+    assert content_disposition.include?(".csv")
   end
 
   private
 
-  # StackAggregatorのスタブ化のためのヘルパー
-  def stub_stack_aggregator_success
-    StackAggregator.any_instance.stubs(:aggregate).returns(true)
-    StackAggregator.any_instance.stubs(:year).returns(@target_date.year)
-    StackAggregator.any_instance.stubs(:month).returns(@target_date.month)
-    StackAggregator.any_instance.stubs(:identifier).returns(@identifier.to_s)
-    StackAggregator.any_instance.stubs(:including_tax).returns(true)
+  # テスト用のスタブメソッド（実際のStackAggregatorの動作をシミュレート）
+  def setup_stack_aggregator_stub
+    # 必要に応じてStackAggregatorのスタブを設定
+    # 現在のテストではActiveTypeオブジェクトの基本的な動作のみをテスト
   end
 end
