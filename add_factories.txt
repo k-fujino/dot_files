@@ -1,0 +1,53 @@
+# test/factories/purchases.rb
+FactoryBot.define do
+  factory :purchase do
+    association :app
+    # Purchaseモデルの実際の属性に応じて調整が必要
+    # 例：
+    # amount { 1000 }
+    # currency { "JPY" }
+    # purchased_at { Time.current }
+    
+    trait :recent do
+      purchased_at { 1.day.ago }
+    end
+    
+    trait :old do
+      purchased_at { 1.month.ago }
+    end
+  end
+end
+
+# test/factories/purchase_cancel_requests.rb
+FactoryBot.define do
+  factory :purchase_cancel_request do
+    association :app
+    # PurchaseCancelRequestモデルの実際の属性に応じて調整が必要
+  end
+end
+
+# test/factories/users.rb
+FactoryBot.define do
+  factory :user do
+    sequence(:email) { |n| "user#{n}@example.com" }
+    role { "watcher" } # Constants::ROLESの値
+    name { Faker::Name.name } # または適当な名前
+    last_accessed_at { nil }
+    
+    trait :administrator do
+      role { "administrator" }
+    end
+    
+    trait :watcher do
+      role { "watcher" }
+    end
+    
+    trait :banned do
+      role { "banned" }
+    end
+    
+    trait :with_last_access do
+      last_accessed_at { 1.hour.ago }
+    end
+  end
+end

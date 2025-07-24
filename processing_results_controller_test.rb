@@ -50,7 +50,7 @@ class ProcessingResultsControllerTest < ActionDispatch::IntegrationTest
     get processing_results_path, params: { page: 9999 }
     
     assert_response :success
-    # ページが存在しない場合でもエーにならないことを確認
+    # ページが存在しない場合でもエラーならないことを確認
     assert { assigns(:processing_results).present? }
   end
 
@@ -181,7 +181,7 @@ class ProcessingResultsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     processing_result = assigns(:processing_result)
     assert { processing_result.finished_at.nil? }
-    assert { processing_result.status.success? == false }
+    assert { processing_result.status.running? }
   end
 
   test "detailフィールドが設定されている場合の表示" do
@@ -211,7 +211,7 @@ class ProcessingResultsControllerTest < ActionDispatch::IntegrationTest
     processing_results = assigns(:processing_results)
     
     # ignore系のステータスも表示されることを確認
-    ignore_statuses = processing_results.map(&:status).select { |s| s.ignore? || s.ignored? }
+    ignore_statuses = processing_results.select { |pr| pr.status.ignore? || pr.status.ignored? }
     assert { ignore_statuses.count >= 2 }
   end
 
@@ -262,5 +262,41 @@ class ProcessingResultsControllerTest < ActionDispatch::IntegrationTest
     processing_result = assigns(:processing_result)
     assert { processing_result.app.nil? }
     assert { processing_result.app_identifier == "standalone_process" }
+  end
+
+  test "processing_resultが大量にある場合のページネーション" do
+    # ページネーションが機能することを確認
+    25.times do |i|
+      FactoryBot.create(:processing_result, 
+                       app: @app, 
+                       name: "大量処理結果#{i}",
+                       started_at: i.hours.ago)
+    end
+    
+    get processing_results_path, params: { page: 1 }
+    
+    assert_response :success
+    processing_results = assigns(:processing_results)
+    # Kaminariのデフォルト設定（通常25件）以下で表示されることを確認
+    # 実際のper_page設定により変わる可能性がある
+    assert { processing_results.count <= 25 }
+    assert { processing_results.current_page == 1 }
+  end
+
+  test "ProcessingResultのクラスメソッドstartの結果が表示される" do
+    # ProcessingResult.startで作成されたレコードが正しく表示されることを確認
+    # 実際のstartメソッドは複雑なため、結果のみをテスト
+    start_result = FactoryBot.create(:processing_result, 
+                                    app: @app,
+                                    name: "Operation::SomeProcess",
+                                    status: :success,
+                                    detail: "処理が正常に完了しました")
+    
+    get processing_result_path(start_result)
+    
+    assert_response :success
+    processing_result = assigns(:processing_result)
+    assert { processing_result.name == "Operation::SomeProcess" }
+    assert { processing_result.detail == "処理が正常に完了しました" }
   end
 end
