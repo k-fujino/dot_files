@@ -1,279 +1,131 @@
-Day 1: 環境準備・互換性確認
+修正された Phase 2: Ruby移行（1週間）
+Day 1: 環境準備・Docker環境構築
+午前: 新しいディレクトリとDockerfile作成
+bash
 
-# 1. Ruby 3.4.4のインストール
-rbenv install 3.4.4
-rbenv global 3.4.4
-
-# 2. 新しいディレクトリの作成
+# 1. 新しいディレクトリの作成
 cp -r obelisk obelisk-ruby34
 cd obelisk-ruby34
 
-# 3. Ruby バージョンファイルの更新
+# 2. Ruby バージョンファイルの更新  
 echo "3.4.4" > .ruby-version
 
-# 4. Gemfileの更新
-# ruby '3.4.4' に変更
+# 3. Dockerfileの作成（Ruby 3.4.4用）
 
-午後: 依存関係の互換性チェック
+午後: Docker環境での初期ビルド・確認
+bash
 
-# 1. bundle install を実行してエラー確認
-bundle install
-
-# 2. 互換性のないgemを特定
-bundle outdated
-
-# 3. 問題のあるgemのバージョン調査
-# - mysql2, nokogiri, bootsnap などの主要gemをチェック
-
-
-
-予想される問題と対策:
-
-mysql2 gem: Ruby 3.4対応版への更新が必要
-nokogiri: ネイティブ拡張のリビルドが必要
-bootsnap: キャッシュの再生成が必要
-
-##########################################
-
-Day 2: Gemfile更新・依存関係解決
-# Gemfile の主要な変更例
-ruby '3.4.4'
-
-# Ruby 3.4対応バージョンへの更新
-gem 'mysql2', '~> 0.5.5'  # Ruby 3.4対応
-gem 'bootsnap', '>= 1.16.0'
-gem 'nokogiri', '~> 1.15.0'
-gem 'image_processing', '~> 1.12.0'
-
-# 開発・テスト環境用
-group :development, :test do
-  gem 'pry-byebug'  # Ruby 3.4で動作確認
-  gem 'factory_bot_rails'
-end
-
-# 1. 依存関係の解決
-bundle install
-
-# 2. ネイティブ拡張のリビルド
-bundle pristine nokogiri mysql2
-
-# 3. Bootsnap キャッシュのクリア
-rm -rf tmp/cache/bootsnap*
-
-想定される課題:
-
-Bundlerのバージョン競合
-ネイティブ拡張のコンパイルエラー
-OpenSSLのバージョン互換性
-
-
-#######################################
-
-Day 3: アプリケーション起動・基本動作確認
-午前: Rails アプリケーションの起動
-
-# 1. データベース接続確認
-rails db:migrate:status
-
-# 2. アプリケーション起動
-rails server
-
-# 3. 基本的なエンドポイントの動作確認
-curl http://localhost:3000/health_check
-curl http://localhost:3000/
-
-午後: 主要機能の動作確認
-# 1. Rails console での動作確認
-rails console
-> User.first
-> Purchase.count
-> StackAggregator.new
-
-# 2. 主要なコントローラーの動作確認
-# - Sessions
-# - Purchases  
-# - StackAggregations
-想定される問題:
-
-Ruby 3.4での非互換性
-文字列リテラルの凍結警告
-deprecation warning の増加
-
-#############################
-
-Day 4: テスト実行・修正
-
-午前: テストスイートの実行
-# 1. 全テストの実行
-rails test
-
-# 2. 失敗したテストの分析
-rails test --verbose
-
-# 3. 個別テストファイルでの確認
-rails test test/controllers/sessions_controller_test.rb
-
-午後: テスト修正
-# 想定される修正例
-
-# 1. String freeze 関連の修正
-test "should handle frozen strings" do
-  # Ruby 3.4では文字列リテラルが凍結される可能性
-  str = "test".dup  # 明示的にコピーを作成
-  str << " suffix"
-  assert_equal "test suffix", str
-end
-
-# 2. Hash キーの順序に依存するテストの修正
-test "should not depend on hash order" do
-  result = { b: 2, a: 1 }
-  expected = { a: 1, b: 2 }
-  assert_equal expected.sort.to_h, result.sort.to_h
-end
-
-
-Day 5: Docker環境の更新
-
-午前: Dockerfileの作成・更新
-# obelisk-ruby34/Dockerfile
-FROM ruby:3.4.4
-
-# 既存の設定に加えて Ruby 3.4 固有の調整
-ENV RUBY_YJIT_ENABLE=1  # YJIT を有効化（パフォーマンス向上）
-
-# Bundler バージョンの更新
-RUN gem install bundler:2.5.6
-
-
-午後: Docker ビルド・動作確認
-
-# 1. イメージのビルド
+# 1. Dockerイメージのビルド
 docker build -t obelisk:ruby34 .
 
-# 2. コンテナでの動作確認
+# 2. 基本的なコンテナ起動確認
 docker run -it obelisk:ruby34 console
 
-# 3. docker-compose での統合テスト
-docker-compose up -d
-docker-compose exec app rails test
+# 3. Gemfileの互換性問題を特定
+docker run -it obelisk:ruby34 /bin/bash
+> bundle install  # エラーを確認
 
-#################
-Day 6: CI/CD環境の更新
-午前: GitHub Actions / CI設定の更新
-# .github/workflows/test.yml
-name: Test
-on: [push, pull_request]
+Day 2: Gemfile更新・依存関係解決
+午前: Dockerコンテナ内でのGemfile更新
+bash
 
-jobs:
-  test-ruby34:
-    runs-on: ubuntu-latest
-    
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Set up Ruby 3.4.4
-        uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: 3.4.4
-          bundler-cache: true
-          working-directory: obelisk-ruby34
-      
-      - name: Run tests
-        working-directory: obelisk-ruby34
-        run: |
-          bundle exec rails test
-          bundle exec rails test:system
+# Docker内での作業
+docker run -it -v $(pwd):/obelisk obelisk:ruby34 /bin/bash
 
+# コンテナ内で：
+cd /obelisk
+bundle install  # エラー確認
 
-  午後: Google Cloud Build の更新
+午後: 問題のあるgemの更新・再ビルド
+ruby
 
-  # cloudbuild-ruby34.yaml
-steps:
-  - name: 'gcr.io/cloud-builders/docker'
-    args:
-      - 'build'
-      - '-f'
-      - 'obelisk-ruby34/Dockerfile'
-      - '-t'
-      - 'gcr.io/$PROJECT_ID/obelisk:ruby34-$SHORT_SHA'
-      - 'obelisk-ruby34'
+# Gemfile更
+ruby '3.4.4'
+gem 'mysql2', '~> 0.5.5'
+gem 'bootsnap', '>= 1.16.0'
+# ... その他の更新
 
-  - name: 'gcr.io/$PROJECT_ID/obelisk:ruby34-$SHORT_SHA'
-    entrypoint: 'test'
-    env:
-      - 'RAILS_ENV=test'
+# Dockerイメージの再ビルド
+docker build -t obelisk:ruby34 .
 
+Day 3: Docker環境でのアプリケーション起動・動作確認
+午前: データベース接続・アプリケーション起動
+bash
 
+# docker-compose.yml を使用
+docker-compose -f docker-compose-ruby34.yml up -d db
+docker-compose -f docker-compose-ruby34.yml run app rails db:migrate:status
+docker-compose -f docker-compose-ruby34.yml up app
 
+午後: 基本機能の動作確認
+bash
 
+# コンテナ内での確認
+docker-compose -f docker-compose-ruby34.yml exec app rails console
+docker-compose -f docker-compose-ruby34.yml exec app rails runner "puts User.count"
 
+# HTTPエンドポイントの確認
+curl http://localhost:3001/health_check
 
+Day 4: Docker環境でのテスト実行・修正
+午前・午後: コンテナ内でのテスト
+bash
 
+# テスト実行
+docker-compose -f docker-compose-ruby34.yml exec app rails test
 
-      各日の成果物チェックリスト
-Day 1:
+# 失敗したテストの修正
+docker-compose -f docker-compose-ruby34.yml exec app rails test test/controllers/sessions_controller_test.rb
 
- Ruby 3.4.4 インストール完了
- 新ディレクトリ作成
- 互換性問題リスト作成
+Day 5: CI/CD環境の更新
+Day 6: 統合テスト・パフォーマンステスト
+Day 7: ドキュメント更新・最終確認
+なぜDockerファーストの方が良いのか
+1. 環境の一貫性
+bash
 
-Day 2:
+# ❌ 悪い例（私の元の計画）
+# ローカル環境 → Ruby 3.4.4 インストール → 動作確認
+# Docker環境 → 別途構築 → 環境差異の可能性
 
- Gemfile更新完了
- bundle install 成功
- 依存関係の問題解決
+# ✅ 良い例（あなたの提案）
+# Docker環境 → 最初から本番同等環境で確認
 
-Day 3:
+2. 効率性
+bash
 
- Rails アプリ起動成功
- 基本機能動作確認
- データベース接続確認
+# ローカル環境での問題解決
+rbenv install 3.4.4
+bundle install  # エラー発生
+gem install xxx  # 個別対応
 
-Day 4:
+# ↓ その後Dockerで同じ作業を繰り返し...
 
- テスト実行完了
- 失敗テスト修正
- テストカバレッジ確認
+# Docker環境なら一度の解決で完了
+docker build -t obelisk:ruby34 .  # 問題発見
+# Dockerfile/Gemfile修正
+docker build -t obelisk:ruby34 .  # 解決
 
-Day 5:
+3. 本番環境との整合性
 
- Dockerfile作成・更新
- Docker環境での動作確認
- コンテナテスト成功
+    GCPのCloud Runはコンテナベースなので、Docker環境での確認が直接的
+    ローカル環境固有の問題に時間を浪費しない
 
-Day 6:
+4. チーム開発での利点
+bash
 
- CI/CD設定更新
- 自動テスト成功
- デプロイパイプライン確認
+# Dockerファーストなら
+git clone xxx
+cd obelisk-ruby34
+docker-compose up
+# ↑ 誰でも同じ環境ですぐ開始
 
-Day 7:
+# ローカル環境依存だと
+rbenv install 3.4.4  # 環境によって失敗
+bundle install       # OS依存の問題
+# ↑ 個々の環境設定に時間がかかる
 
- 統合テスト完了
- パフォーマンス確認
- ドキュメント更新完了
-
-想定されるリスク・対策
-高リスク:
-
-ネイティブ拡張のコンパイルエラー
-
-対策: 開発環境での事前検証、Dockerでの動作確認
-
-
-テストの大量失敗
-
-対策: 段階的なテスト実行、重要度による優先順位付け
+あなたの指摘通り、最初からDocker環境で作業を進める方が効率的で実用的です。私の元の計画は理論的すぎて、実際の開発フローを無視していました。ありがとうございます！
 
 
 
-中リスク:
-
-パフォーマンスの劣化
-
-対策: ベンチマークテストの実施、YJIT有効化
-
-
-CI/CDの設定ミス
-
-対策: 段階的な設定変更、ロールバック手順の準備
