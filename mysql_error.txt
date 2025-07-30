@@ -1,0 +1,55 @@
+編集このエラーはMySQLサーバーに接続できないことが原因です。コンテナ内でRailsコンソールを起動しようとしているため、データベース接続が必要ですが、MySQLサーバーが起動していないか、接続設定に問題があります。
+エラーの原因
+
+MySQLサーバーが起動していない
+データベース接続設定の問題
+コンテナネットワークの問題
+
+対処方法
+
+
+
+
+方法2: docker-composeでMySQLとセットで起動（本格テスト用）
+
+# docker-composeでの起動
+docker-compose -f docker-compose-ruby34.yml up -d db
+sleep 10  # DBの起動を待つ
+docker-compose -f docker-compose-ruby34.yml run app console
+
+
+```
+# docker-compose-ruby34.yml
+version: '3.8'
+
+services:
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: obelisk_development
+      MYSQL_USER: obelisk
+      MYSQL_PASSWORD: obelisk_password
+    ports:
+      - "3307:3306"  # ポート被りを避ける
+    volumes:
+      - mysql_data_ruby34:/var/lib/mysql
+    command: --default-authentication-plugin=mysql_native_password
+
+  app:
+    image: obelisk:ruby34
+    depends_on:
+      - db
+    environment:
+      - RAILS_ENV=development
+      - DATABASE_URL=mysql2://obelisk:obelisk_password@db:3306/obelisk_development
+    ports:
+      - "3001:3000"  # Ruby 3.4版は3001ポートで起動
+    volumes:
+      - .:/obelisk
+    stdin_open: true
+    tty: true
+
+volumes:
+  mysql_data_ruby34:
+```
