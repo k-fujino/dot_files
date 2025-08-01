@@ -1,0 +1,49 @@
+この問題は、テスト実行時の環境変数とDockerfileの設定に不整合があることが原因です。
+問題の分析
+
+Dockerfileの問題: RAILS_ENV="production"に設定されている
+テスト実行時の環境: rails testはRAILS_ENV=testで実行される
+環境変数の不整合: テスト環境用の環境変数が正しく設定されていない
+
+エラーメッセージ Access denied for user 'foo'@'172.18.0.4' の「foo」は、何らかの設定でデフォルト値として使われているユーザー名です。
+解決策
+1. Dockerfile-devの修正（本番用Dockerfileとは別）
+修正版Dockerfile-dev参照
+
+2. docker-compose.yamlの修正
+修正版docker-compose.yaml参照
+
+3テスト実行用のスクリプト
+test実行script参照
+
+実行手順
+1. 即座に実行する修正
+```
+# 1. Dockerfile-devのRAILS_ENVを削除
+sed -i '/RAILS_ENV="production"/d' Dockerfile-dev
+
+# 2. 完全なリビルド
+docker-compose down --volumes
+docker-compose build --no-cache obelisk
+docker-compose up -d
+```
+
+2.スクリプトを使った確実な修正
+```
+# スクリプトを実行可能にして実行
+chmod +x test_script.sh
+./test_script.sh
+```
+
+3. 手動でのテスト実行
+```
+# 環境変数を明示的に設定してテスト実行
+docker-compose exec -e RAILS_ENV=test -e DATABASE_URL="mysql2://root@db:3306/obeliskapp_test" obelisk bin/rails test
+```
+根本原因
+
+Dockerfile内のRAILS_ENV="production": これによりテスト実行時も本番環境設定が使用された
+テスト用データベース設定の不足: obeliskapp_testデータベースが準備されていない
+環境変数の競合: 複数の設定が混在して正しい接続情報が使用されない
+
+この修正により、Ruby 3.4.4への移行とテスト実行が正常に動作するはずです。

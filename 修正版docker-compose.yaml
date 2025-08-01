@@ -1,0 +1,93 @@
+services:
+  obelisk:
+    image: obelisk:local
+    container_name: obelisk-local
+    build:
+      context: .
+      dockerfile: ./Dockerfile-dev
+    environment:
+      TZ: "Asia/Tokyo"
+      RAILS_ENV: "development"
+      # テスト用の追加設定
+      RAILS_ENV_TEST: "test"
+      # データベース接続設定
+      DATABASE_USER_NAME: "root"
+      DATABASE_PASSWORD: ""
+      DATABASE_URL: "mysql2://root@db:3306/obeliskapp_development"
+      # テスト用データベース設定を明示的に追加
+      TEST_DATABASE_URL: "mysql2://root@db:3306/obeliskapp_test"
+      APPLOG_HOST: "db"
+      APPLOG_PASSWORD: ""
+      REDIS_HOST: "redis"
+      REDIS_PORT: "6379"
+      BASIC_USER: "user"
+      BASIC_PASSWORD: "password"
+      SKIP_DEPENDENT_OTHER_PROCESS_TEST: "1"
+      GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY: "test_private_key.json"
+      GPLUS_KEY: "975645593859-a7iv8i4sve1jkpgas3k4krlrjc7ubvav.apps.googleusercontent.com"
+      GPLUS_SECRET: "j43VNo2DUmFG1pj-EHQjO9Np"
+    tty: true
+    stdin_open: true
+    ports:
+      - "${PORT:-3000}:3000"
+    depends_on:
+      - db
+      - redis
+    volumes:
+      - type: volume
+        source: bundle_install
+        target: /usr/local/bundle
+      - type: volume
+        source: bundle_config
+        target: /obelisk/.config
+      # プロジェクトディレクトリは常に同期する
+      - type: bind
+        source: .
+        target: /obelisk
+
+  db:
+    image: mysql:5.7
+    container_name: "obelisk-db-local"
+    platform: linux/amd64
+    volumes:
+      - mysql:/var/lib/mysql
+    environment:
+      TZ: "Asia/Tokyo"
+      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+      # rootユーザーで任意のホストからの接続を許可
+      MYSQL_ROOT_HOST: "%"
+    # データベースの初期化を確実にするためのヘルスチェック
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  redis:
+    image: redis
+    container_name: "obelisk-redis-local"
+
+  sidekiq:
+    image: obelisk:local
+    container_name: sidekiq-local
+    environment:
+      TZ: "Asia/Tokyo"
+      RAILS_ENV: "development"
+      DATABASE_USER_NAME: "root"
+      DATABASE_PASSWORD: ""
+      DATABASE_URL: "mysql2://root@db:3306/obeliskapp_development"
+      APPLOG_HOST: "db"
+      APPLOG_PASSWORD: ""
+      REDIS_HOST: "redis"
+      REDIS_PORT: "6379"
+      GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY: "test_private_key.json"
+    volumes:
+      - .:/obelisk
+    depends_on:
+      - db
+      - redis
+    command: [sidekiq]
+
+volumes:
+  mysql:
+  bundle_install:
+  bundle_config:

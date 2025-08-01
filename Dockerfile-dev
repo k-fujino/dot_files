@@ -1,0 +1,67 @@
+FROM ruby:3.4.4
+
+ENV CLOUDSDK_CORE_DISABLE_PROMPTS="1" \
+    PATH="/opt/google-cloud-sdk/bin:$PATH" \
+    APP_HOME="/obelisk" \
+    LANG="C.UTF-8"
+    # RAILS_ENV="production" を削除（開発・テスト環境では動的に設定）
+
+# install gcloud and kubectl
+RUN curl https://sdk.cloud.google.com | bash && mv /root/google-cloud-sdk /opt
+RUN gcloud components install kubectl
+
+# ref: https://github.com/docker-library/rails/blob/master/Dockerfile
+RUN apt-get update && apt-get install -y --no-install-recommends \
+                              default-mysql-client \
+                              python3 \
+                              python3-dev \
+                              python3-pip \
+                              python3-openssl \
+                              xvfb \
+                              wget \
+                              ca-certificates \
+                              apt-transport-https \
+                              fonts-liberation \
+                              unzip \
+                              nodejs && \
+                      rm -rf /var/lib/apt/lists/*
+
+# install entrykit(v0.4.0) and dockerize(v0.3.0)
+COPY bin/dockerize /bin/dockerize
+COPY bin/entrykit-linux /bin/entrykit
+RUN entrykit --symlink
+
+WORKDIR $APP_HOME
+
+ADD Gemfile $APP_HOME/Gemfile
+ADD Gemfile.lock $APP_HOME/Gemfile.lock
+ADD vendor/gems/rack-aiming-auth-basic $APP_HOME/vendor/gems/rack-aiming-auth-basic
+
+# env DATABASE_URLを使うため ファイルの設定値は使わないがファイルがないと起動時エラーになるためcopy
+COPY config/database.yml.example $APP_HOME/config/database.yml
+
+# bundlerバージョンを2.5.6に更新（Ruby 3.4.4対応）
+RUN gem install bundler:2.5.6
+
+# 開発・テスト環境用のbundle設定
+RUN bundle config set --local without production && \
+    bundle install
+
+ADD . $APP_HOME
+
+# 開発環境用：assets:precompileはスキップまたは条件付き実行
+RUN bundle exec rake assets:precompile
+
+ENTRYPOINT [ \
+  "prehook", \
+    "dockerize -timeout 60s -wait tcp://db:3306", "--", \
+  "switch", \
+    "rails=bin/rails server -b 0.0.0.0", \
+    "setup=bin/rails db:create db:migrate", \
+    "test_setup=bin/rails db:setup db:seed_fu obelisk:app:test:setup", \
+    "test=bin/rails test", \
+    "system_test=bin/rails test:system", \
+    "sidekiq=bundle exec sidekiq -C config/sidekiq.yml", \
+    "console=bin/rails console", "--" ]
+
+CMD ["rails"]
