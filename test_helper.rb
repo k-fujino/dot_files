@@ -50,15 +50,55 @@ end
 
 # NOTE: DatabaseRewinderを動的に設定している
 def prepare_multi_database_configuration(app_names)
-  base = ActiveRecord::Base.configurations[Rails.env]
+  # Rails.application.config.database_configurationを使用してより安全に設定を管理
+  current_db_config = Rails.application.config.database_configuration
+
+  # test環境の基本設定を取得
+  base_config = current_db_config['test'] || current_db_config[Rails.env]
+  
+  unless base_config
+    Rails.logger.error "No base configuration found for test environment"
+    return
+  end
+
+  # 追加が必要な設定を収集
+  configs_to_add = {}
+
   app_names.each do |app_name, is_link|
-    db = [is_link ? 'aiminglink' : 'obelisk', app_name, 'test'].join("_")
-    next if ActiveRecord::Base.configurations[db]
-    ActiveRecord::Base.configurations[db] = base.merge(
-      username: app_name,
-      database: db,
+    db_name = [is_link ? 'aiminglink' : 'obelisk', app_name, 'test'].join("_")
+
+    # 既に設定済みの場合はスキップ
+    next if current_db_config[db_name] || 
+            ActiveRecord::Base.configurations.configs_for(env_name: 'test', name: db_name).present?
+
+    # 新しい設定を作成
+    configs_to_add[db_name] = base_config.merge(
+      'username' => app_name.to_s,
+      'database' => db_name,
     )
-    DatabaseRewinder[db]
+  end
+
+  # 設定が追加された場合のみ更新
+  unless configs_to_add.empty?
+    # Rails.application.config.database_configurationを更新
+    updated_config = current_db_config.merge(configs_to_add)
+    Rails.application.config.database_configuration = updated_config
+    
+    # 新しいDatabaseConfigurationsオブジェクトを作成
+    new_configurations = ActiveRecord::DatabaseConfigurations.new(updated_config)
+    ActiveRecord::Base.configurations = new_configurations
+
+    # 設定が正しく適用された後でDatabaseRewinderに登録
+    configs_to_add.each_key do |db_name|
+      # 設定の存在を確認
+      if ActiveRecord::Base.configurations.configs_for(env_name: 'test', name: db_name).present?
+        DatabaseRewinder[db_name]
+      else
+        Rails.logger.warn "Failed to register DatabaseRewinder for: #{db_name}"
+      end
+    end
+    
+    Rails.logger.info "Added #{configs_to_add.size} database configurations successfully"
   end
 end
 

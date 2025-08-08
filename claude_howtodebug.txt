@@ -1,0 +1,20 @@
+3. それでもエラーが出る場合のデバッグ
+もしまだエラーが出る場合は、以下を確認してください：
+
+
+# デバッグモードでテスト実行
+docker-compose -f docker-compose.yaml -f docker-compose.test.yaml run --rm obelisk bash -c "
+RAILS_ENV=test bin/rails runner '
+puts \"Rails version: \#{Rails.version}\"
+puts \"Current configurations:\"
+ActiveRecord::Base.configurations.configurations.each do |config|
+  puts \"  \#{config.env_name}/\#{config.name}: \#{config.database}\"
+end
+'
+"
+
+エラーの根本原因
+
+configs_for()の戻り値: Rails 6.1ではconfigs_for()が単一のオブジェクトまたは配列を返す場合があり、.firstを直接呼べない
+設定の適用タイミング: DatabaseRewinderへの登録を設定がActiveRecord::Base.configurationsに適用される前に実行していた
+Mysql2::error::ConnectionError: Mysql2::Error::ConnectionErrorが正しい（小文字のerrorではなく大文字のError）
