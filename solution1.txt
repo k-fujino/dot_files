@@ -1,0 +1,100 @@
+原因特定のための調査手順
+1. デバッグ出力を追加してデータの流れを確認
+テストファイルに以下を追加して実行してください：
+
+test "aggregate" do
+  # aggregatorのインスタンスが異なることを確認
+  puts "tax_included aggregator object_id: #{@aggregator_tax_included.object_id}"
+  puts "tax_excluded aggregator object_id: #{@aggregator_tax_excluded.object_id}"
+  
+  # daily_consumption_revision_priceの中身を確認
+  puts "\n=== tax_included daily_consumption_revision_price ==="
+  pp @aggregator_tax_included.daily_consumption_revision_price
+  
+  puts "\n=== tax_excluded daily_consumption_revision_price ==="
+  pp @aggregator_tax_excluded.daily_consumption_revision_price
+  
+  # 両方のobject_idを確認
+  puts "\ntax_included hash object_id: #{@aggregator_tax_included.daily_consumption_revision_price.object_id}"
+  puts "tax_excluded hash object_id: #{@aggregator_tax_excluded.daily_consumption_revision_price.object_id}"
+  
+  tax_included = @aggregator_tax_included.aggregate
+  tax_excluded = @aggregator_tax_excluded.aggregate
+  
+  # 実際の値を確認
+  puts "\n=== Results ==="
+  puts "tax_included: #{tax_included.inspect}"
+  puts "tax_excluded: #{tax_excluded.inspect}"
+  
+  # 既存のアサーション
+  assert { tax_included[:app_store] == 1_440 }
+  # ...
+end
+
+
+
+
+
+
+2. ConsumptionRevisionの実際のデータを確認
+
+test "check consumption revision data" do
+  travel_to Date.new(2017, 1, 31).in_time_zone do
+    # 最終日のデータを確認
+    last_date = Date.new(2017, 1, 31)
+    
+    # applied_on_beforeスコープの結果を確認
+    revisions = ConsumptionRevision(@identifier).applied_on_before(last_date)
+    puts "Total revisions count: #{revisions.count}"
+    
+    # store_type毎の合計を確認
+    grouped = revisions.group(:store_type).sum(:price)
+    puts "Grouped prices: #{grouped.inspect}"
+    
+    # 日付毎の件数を確認
+    by_date = revisions.group(:applied_on).count
+    puts "Revisions by date: #{by_date.inspect}"
+  end
+end
+
+
+
+
+3. Priceクラスの動作確認
+
+test "check Price.calculate behavior" do
+  # tax_includedとtax_excludedで異なる値になるか確認
+  test_value = 100
+  
+  included = Price.calculate(test_value, including_tax: true)
+  excluded = Price.calculate(test_value, including_tax: false)
+  
+  puts "Original value: #{test_value}"
+  puts "Tax included: #{included}"
+  puts "Tax excluded: #{excluded}"
+end
+
+
+
+
+
+4. 必要なファイル
+以下のファイルの内容を確認させてください：
+
+price.rb - Price.calculate メソッドの実装
+app_log_accessable.rb - ConsumptionRevision(identifier) の仕組み
+
+
+5. Rails 6.1の実際の挙動を確認
+Railsコンソールで以下を実行：
+
+
+# HashWithIndifferentAccessのデフォルト値の挙動を確認
+h1 = ActiveSupport::HashWithIndifferentAccess.new { |h, k| h[k] = {} }
+h1[:a][:x] = 1
+h1[:b][:y] = 2
+puts h1[:a].object_id
+puts h1[:b].object_id
+puts h1.inspect
+
+
