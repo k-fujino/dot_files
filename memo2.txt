@@ -1,0 +1,43 @@
+“LastDailyConsumptionRevisionPrice クラスで使われている aggregator は、実は StackAggregator クラスのインスタンスです。”
+自分ではソースを辿れなかったので どういう根拠で
+どうしてそれがわかったのですか？
+
+1. テストコードから
+@parent_tax_included = StackAggregator.new(identifier: @identifier, year: year, month: month, including_tax: true)
+@aggregator_tax_included = StackAggregators::LastDailyConsumptionRevisionPrice.new(@parent_tax_included)
+
+2. base.rbのコンストラクタから
+module StackAggregators
+  class Base
+    attr_reader :aggregator
+
+    def initialize(aggregator)
+      @aggregator = aggregator
+    end
+
+3. delegateの定義から
+# base.rb
+delegate :identifier, :including_tax, :store_types,
+         :showable_store_types, :period, to: :aggregator
+
+# last_daily_consumption_revision_price.rb  
+delegate :daily_consumption_revision_price, to: :aggregator
+
+4. StackAggregatorの定義から
+class StackAggregator < ActiveType::Object
+  attr_aggregator(
+    # ...
+    :daily_consumption_revision_price,  # ← このメソッドが定義される
+    # ...
+  )
+
+
+  attr_aggregator マクロによって daily_consumption_revision_price メソッドが動的に定義されます。
+つまり
+
+LastDailyConsumptionRevisionPrice は StackAggregator インスタンスを受け取る
+それを @aggregator として保持
+daily_consumption_revision_price メソッドを @aggregator に委譲
+StackAggregator は attr_aggregator で daily_consumption_revision_price メソッドを持つ
+
+この流れから、aggregator は StackAggregator のインスタンスだと判断しました。

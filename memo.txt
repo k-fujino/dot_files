@@ -1,0 +1,36 @@
+原因が特定できました！attr_aggregator のメモ化とRails 6.1での挙動変更が組み合わさって発生している問題です。
+根本原因
+1. attr_aggregator のメモ化の仕組み
+```
+define_method(attr_name) do
+  klass = "#{base_dir}/#{attr_name}".classify.constantize
+  instance_variable_get(:"@#{attr_name}") || \
+    instance_variable_set(:"@#{attr_name}", klass.aggregate(self))
+end
+```
+このコードは @daily_consumption_revision_price をインスタンス変数としてキャッシュします。
+2. 問題の発生メカニズム
+テストコードを見ると：
+```
+@aggregator_tax_included = StackAggregators::LastDailyConsumptionRevisionPrice.new(@parent_tax_included)
+@aggregator_tax_excluded = StackAggregators::LastDailyConsumptionRevisionPrice.new(@parent_tax_excluded)
+```
+ここで重要なのは、@parent_tax_included と @parent_tax_excluded が同じ期間・同じデータを参照していることです（違いは税込/税抜のみ）。
+3. Rails 6.1での変更点
+Rails 6.0→6.1で以下が変わった可能性が高いです：
+
+HashWithIndifferentAccess のデフォルト値処理
+```
+ActiveSupport::HashWithIndifferentAccess.new { |h, k| h[k] = countable_hash }
+```
+このデフォルト値の生成が、Rails 6.1では参照を共有するようになった可能性
+インスタンス変数のキャッシュタイミング
+Rails 6.1でメモ化されたハッシュが異なるインスタンス間で共有される
+
+詳細な問題の流れ
+
+@parent_tax_included.daily_consumption_revision_price が呼ばれる
+結果が @daily_consumption_revision_price にキャッシュされる
+@parent_tax_excluded.daily_consumption_revision_price が呼ばれる
+同じハッシュオブジェクトが参照され、値が加算される
+結果として2倍の値になる
